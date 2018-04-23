@@ -62,14 +62,25 @@ next:
   cmp r11, r10
   ldreq r11, =spinner
 
+  bl check_sync
+  cmp r0, #0
+  bne 2f
+
   ldr r0, =500000
   bl delay_usec
   bl toggle_light
   b 1b
 
-// foo
+2:
+  // write "lstn", receive u32
+  ldr r0, =listen_word
+  add r1, r0, #4
+  bl uart_write_string
+  bl uart_read_u32
   bl write_hex
-  bl compute_crc32
+  ldr r0, =hex_buffer
+  ldr r1, =hex_buffer_end
+  bl uart_write_string
 
 halt:
   wfi
@@ -98,16 +109,55 @@ toggle_light:
   pop {lr}
   bx lr
 
+// ----- protocol.s
+
+// probe for the "boot" sync from the host
+.global check_sync
+check_sync:
+  push {r4, r5, r6, r7, lr}
+  ldr r4, =sync_state
+  ldr r5, [r4]
+  ldr r6, =sync_word
+
+1:
+  ldrb r7, [r6, r5]
+  bl uart_probe
+  cmp r0, #0
+  beq 3f
+
+  cmp r0, r7
+  movne r5, #0
+  addeq r5, #1
+  str r5, [r4]
+  movne r0, #0
+  bne 3f
+
+  // got one!
+  cmp r5, #4
+  blo 1b
+
+2:
+  // got it all!
+  mov r0, #1
+3:
+  pop {r4, r5, r6, r7, lr}
+  bx lr
+
 
 .data
 
 light:
   .word 0
-
-// unaligned:
+sync_state:
+  .word 0
+sync_word:
+  .ascii "boot"
+listen_word:
+  .ascii "lstn"
 
 banner:
   .ascii "\rc3r3s "
+  .byte 0  // alignment
 banner_end:
 
 spinner:

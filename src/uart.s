@@ -127,7 +127,26 @@ uart_probe:
   ldr r3, =UART_BASE
   dmb
   ldr r2, [r3, #FR]
-  tst r2, #FR_TX_EMPTY
+  tst r2, #FR_RX_EMPTY
   ldreq r0, [r3, #DR]
   and r0, #0xff
+  bx lr
+
+// -> [r0], blocking, little-endian
+.global uart_read_u32
+uart_read_u32:
+  // r0 = accumulator, r1 = shift
+  mov r0, #0
+  mov r1, #0
+  ldr r3, =UART_BASE
+1:
+  dmb
+  ldr r2, [r3, #FR]
+  tst r2, #FR_RX_EMPTY
+  bne 1b
+  ldrb r2, [r3, #DR]
+  add r0, r2, lsl r1
+  add r1, #8
+  cmp r1, #32
+  blo 1b
   bx lr
