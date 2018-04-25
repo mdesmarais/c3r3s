@@ -72,15 +72,80 @@ next:
   b 1b
 
 2:
-  // write "lstn", receive u32
+  // write "lstn", receive "send"
   ldr r0, =listen_word
   add r1, r0, #4
   bl uart_write_string
+  ldr r0, =header
+  ldr r1, =header_end
+  bl uart_read_block
+  ldr r0, =header
+  ldr r0, [r0]
+  ldr r1, =send_word
+  ldr r1, [r1]
+  cmp r0, r1
+  bne fail
+
+  // read blocks:
+  //   - r7: origin
+  //   - r8: current addr
+  //   - r9: end addr
+  //   - r10: count (so far)
+  //   - r11: current block size
+  ldr r0, =header_origin
+  ldr r7, [r0]
+  mov r8, r7
+  ldr r0, =header_size
+  ldr r9, [r0]
+  add r9, r7
+  mov r10, #0
+
+  cmp r8, r9
+  bhs 4f
+3:
+  // read one block
   bl uart_read_u32
-  bl write_hex
-  ldr r0, =hex_buffer
-  ldr r1, =hex_buffer_end
+  mov r11, r0
+  mov r1, r8
+  add r1, r0
+  mov r0, r8
+  bl uart_read_block
+  add r8, r11
+  mov r0, r8
+  sub r0, r7
+  bl uart_write_u32
+  cmp r8, r9
+  blo 3b
+
+4:
+  // read crc32
+  bl uart_read_u32
+  mov r11, r0
+  mov r0, r7
+  mov r1, r9
+  bl compute_crc32
+  cmp r11, r0
+  bne fail
+
+  // send "good", wait 1 second, then jump to the origin!
+  ldr r0, =good_word
+  add r1, r0, #4
   bl uart_write_string
+
+  bl toggle_light
+  ldr r0, =#1000000
+  bl delay_usec
+  bl toggle_light
+
+  // reload r0-r2
+  pop {r0, r1, r2}
+  bx r7
+
+fail:
+  ldr r0, =fail_word
+  add r1, r0, #4
+  bl uart_write_string
+  b halt
 
 halt:
   wfi
@@ -154,6 +219,20 @@ sync_word:
   .ascii "boot"
 listen_word:
   .ascii "lstn"
+send_word:
+  .ascii "send"
+good_word:
+  .ascii "good"
+fail_word:
+  .ascii "fail"
+
+header:
+  .word 0
+header_origin:
+  .word 0
+header_size:
+  .word 0
+header_end:
 
 banner:
   .ascii "\rc3r3s "

@@ -108,16 +108,32 @@ uart_write_string:
   ldr r3, =UART_BASE
 1:
   dmb
-2:
   ldr r2, [r3, #FR]
   tst r2, #FR_TX_FULL
-  bne 2b
+  bne 1b
   ldrb r2, [r0]
   str r2, [r3, #DR]
   add r0, r0, #1
   cmp r0, r1
   blo 1b
+  bx lr
 
+// [r0: data]
+.global uart_write_u32
+uart_write_u32:
+  // r1 = shift
+  mov r1, #0
+  ldr r3, =UART_BASE
+1:
+  dmb
+  ldr r2, [r3, #FR]
+  tst r2, #FR_TX_FULL
+  bne 1b
+  mov r2, r0, lsr r1
+  strb r2, [r3, #DR]
+  add r1, #8
+  cmp r1, #32
+  blo 1b
   bx lr
 
 // -> [r0: non-zero if a byte was read]
@@ -149,4 +165,18 @@ uart_read_u32:
   add r1, #8
   cmp r1, #32
   blo 1b
+  bx lr
+
+// [r0: start_addr, r1: end_addr] (align 4)
+.global uart_read_block
+uart_read_block:
+  push {r4, r5, lr}
+  mov r4, r0
+  mov r5, r1
+1:
+  bl uart_read_u32
+  str r0, [r4], #4
+  cmp r4, r5
+  blo 1b
+  pop {r4, r5, lr}
   bx lr
