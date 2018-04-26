@@ -3,6 +3,7 @@ extern crate libc;
 extern crate termios;
 
 use clap::{App, Arg};
+use std::cmp::max;
 use std::{io, process};
 use std::io::Read;
 use std::fs::{File, metadata};
@@ -30,7 +31,7 @@ fn main() {
     )
     .arg(
       Arg::with_name("block_size").short("b").long("block")
-        .help(&format!("set transmit block size (default: {})", DEFAULT_BLOCK_SIZE))
+        .help(&format!("set transmit block size (default is dynamic, minimum of {})", DEFAULT_BLOCK_SIZE))
         .takes_value(true)
     )
     .arg(Arg::with_name("serial-device").required(true))
@@ -48,14 +49,6 @@ fn main() {
     });
   }
 
-  let mut block_size = DEFAULT_BLOCK_SIZE;
-  if let Some(block_size_override) = matches.value_of("block_size") {
-    block_size = parse_int(block_size_override).unwrap_or_else(|err| {
-      error!("Can't parse block size '{}': {}", block_size_override, err);
-      process::exit(1);
-    });
-  }
-
   let file_size = metadata(filename).unwrap_or_else(|err| {
     error!("Can't read kernel file '{}': {}", filename, err);
     process::exit(1);
@@ -65,6 +58,15 @@ fn main() {
     error!("Can't read kernel file '{}': {}", filename, err);
     process::exit(1);
   });
+
+  // try not to send more than 100 blocks:
+  let mut block_size = max(DEFAULT_BLOCK_SIZE, (file_size as u32) / 100);
+  if let Some(block_size_override) = matches.value_of("block_size") {
+    block_size = parse_int(block_size_override).unwrap_or_else(|err| {
+      error!("Can't parse block size '{}': {}", block_size_override, err);
+      process::exit(1);
+    });
+  }
 
   let mut serial = Serial::connect(matches.value_of("serial-device").unwrap()).unwrap_or_else(|err| {
     error!("Failed to set TTY parameters: {}", err);
