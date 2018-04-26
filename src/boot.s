@@ -16,10 +16,11 @@ _start:
   push {r0, r1, r2}
 
   // kill all existing cores except #0.
-  mrc p15, #0, r1, c0, c0, #5
-  and r1, r1, #3
-  cmp r1, #0
-  bne halt
+  // FIXME: testing shows that none of these cores are active in armv7 mode anyway.
+  @ mrc p15, #0, r1, c0, c0, #5
+  @ and r1, r1, #3
+  @ cmp r1, #0
+  @ bne halt
 
   // move code to $7800, then jump-absolute to it.
   ldr r0, =_start
@@ -132,6 +133,9 @@ next:
   add r1, r0, #4
   bl uart_write_string
 
+  bl toggle_light
+  ldr r0, =#1000000
+  bl delay_usec
   bl toggle_light
   ldr r0, =#1000000
   bl delay_usec
