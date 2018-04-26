@@ -6,13 +6,15 @@ ASFLAGS = -mfloat-abi=hard -mcpu=cortex-a7
 SOURCES = $(addprefix src/,boot.s crc.s div.s hex.s mailbox.s uart.s)
 OBJECTS = $(patsubst src/%.s,target/%.o,$(SOURCES))
 
-all: target/kernel.img
+all: dist/kernel.img dist/fling
 
 clean:
-	rm -rf target
+	rm -rf target dist
+	(cd fling && cargo clean)
 
-target/kernel.img: target/c3r3s.elf
-	$(OBJCOPY) target/c3r3s.elf -O binary target/kernel.img
+dist/kernel.img: target/c3r3s.elf
+	mkdir -p dist
+	$(OBJCOPY) target/c3r3s.elf -O binary dist/kernel.img
 
 target/c3r3s.elf: target $(OBJECTS)
 	$(CC) $(ASFLAGS) -n -T src/linker.ld -o target/c3r3s.elf -O2 -nostdlib -Wl,--gc-sections $(OBJECTS)
@@ -23,5 +25,13 @@ target/%.o: src/%.s
 
 target:
 	mkdir -p target
+
+
+# fling
+
+dist/fling: fling/Cargo.* fling/src/*
+	(cd fling && cargo build --release)
+	mkdir -p dist
+	cp fling/target/release/fling dist/fling
 
 .PHONY: all clean
