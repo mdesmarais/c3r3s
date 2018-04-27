@@ -1,10 +1,10 @@
 ENTRY(_start)
 
 SECTIONS {
-  . = 0x7800;
+  . = 0x7fc00;
   _start = .;
 
-  .text 0x7800 : {
+  .text : {
     KEEP(*(.text.boot))
     *(.text)
   }
