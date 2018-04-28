@@ -14,8 +14,8 @@
 .set MAILBOX_STATUS_1, 0x38
 
 .set PROPERTY, 8
-.set FULL, (1 << 31)
-.set EMPTY, (1 << 30)
+.set BIT_FULL, 31
+.set BIT_EMPTY, 30
 
 .set TAG_CLOCK_GET_RATE, 0x00030002
 .set TAG_SET_GPIO_STATE, 0x00038041
@@ -97,8 +97,7 @@ mailbox_send:
   bl delay_small
   add x2, x1, #MAILBOX_STATUS_1
   ldar w2, [x2]
-  tst w2, #FULL
-  b.ne 1b
+  tbnz w2, #BIT_FULL, 1b
 
   add w0, w0, #PROPERTY
   add x2, x1, #MAILBOX_RW_1
@@ -109,8 +108,7 @@ mailbox_send:
   bl delay_small
   add x2, x1, #MAILBOX_STATUS_0
   ldar w2, [x2]
-  tst w2, #EMPTY
-  b.ne 2b
+  tbnz w2, #BIT_EMPTY, 2b
 
   add x2, x1, #MAILBOX_RW_0
   ldar w0, [x2]
