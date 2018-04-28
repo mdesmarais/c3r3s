@@ -74,30 +74,25 @@ set_led:
 // [w0: 32-bit addr]
 .global mailbox_send
 mailbox_send:
-  push fp, lr
+  mov x3, lr
   dmb sy
   ldr w1, =MAILBOX_BASE
 1:
   bl delay_small
-  add x2, x1, #MAILBOX_STATUS_1
-  ldar w2, [x2]
+  dmb sy
+  ldr w2, [x1, #MAILBOX_STATUS_1]
   tbnz w2, #BIT_FULL, 1b
-
   add w0, w0, #PROPERTY
-  add x2, x1, #MAILBOX_RW_1
-  stlr w0, [x2]
+  str w0, [x1, #MAILBOX_RW_1]
 
   // now wait for the reply:
 2:
   bl delay_small
-  add x2, x1, #MAILBOX_STATUS_0
-  ldar w2, [x2]
+  dmb sy
+  ldr w2, [x1, #MAILBOX_STATUS_0]
   tbnz w2, #BIT_EMPTY, 2b
-
-  add x2, x1, #MAILBOX_RW_0
-  ldar w0, [x2]
-  pop fp, lr
-  ret
+  ldr w0, [x1, #MAILBOX_RW_0]
+  ret x3
 
 
 .data

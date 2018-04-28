@@ -32,7 +32,7 @@ delay_usec:
   add w1, w0, w1
 1:
   dmb sy
-  ldar w0, [x2]
+  ldr w0, [x2]
   cmp w0, w1
   b.ls 1b
   ret
