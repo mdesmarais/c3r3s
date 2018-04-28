@@ -37,11 +37,9 @@
 .set MASK_ALL, 0x7ff
 .set ENABLE_RX_TX, 0x301
 
-.set BIT_FR_TX_FULL, 6
-
-.set FR_TX_EMPTY, 0x80
-.set FR_TX_FULL, 0x20
-.set FR_RX_EMPTY, 0x10
+.set BIT_FR_TX_EMPTY, 7
+.set BIT_FR_TX_FULL, 5
+.set BIT_FR_RX_EMPTY, 4
 
 .text
 
@@ -101,7 +99,7 @@ uart_write:
 1:
   ldr w1, [x2, #FR]
   tbnz w1, #BIT_FR_TX_FULL, 1b
-  str w0, [x2, #DR]
+  strb w0, [x2, #DR]
   ret
 
 // write 32 bits as 8 hex digits
@@ -151,7 +149,7 @@ uart_write_string:
 .global uart_write_u32
 uart_write_u32:
   mov x5, lr
-  ldr w4, #0
+  mov w4, #0
 1:
   lsr w0, w3, w4
   bl uart_write
@@ -166,9 +164,10 @@ uart_probe:
   dmb sy
   ldr w2, =UART_BASE
   ldr w1, [x2, #FR]
-  ldr w0, [x2, #DR]
-  and w0, w0, #0xff
-  tst w1, #FR_RX_EMPTY
+  tst w1, #(1 << BIT_FR_RX_EMPTY)
+  b.ne 1f
+  ldrb w0, [x2, #DR]
+1:
   ret
 
 // read LSB u32 from uart
