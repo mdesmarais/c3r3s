@@ -25,41 +25,25 @@
 
 .text
 
-// -> [r0: core, r1: uart]
-// .global clocks_get_info
-// clocks_get_info:
-//   push {lr}
-//
-//   ldr r0, =property_buffer
-//   mov r1, #0
-//   ldr r2, =TAG_CLOCK_GET_RATE
-//   mov r3, #8
-//
-//   str r1, [r0, #4]
-//
-//   str r2, [r0, #8]
-//   str r3, [r0, #12]
-//   str r1, [r0, #16]
-//   ldr r12, =CLOCK_CORE
-//   str r12, [r0, #20]
-//   str r1, [r0, #24]
-//
-//   str r2, [r0, #28]
-//   str r3, [r0, #32]
-//   str r1, [r0, #36]
-//   ldr r12, =CLOCK_UART
-//   str r12, [r0, #40]
-//   str r1, [r0, #44]
-//
-//   str r1, [r0, #48]
-//   bl mailbox_send
-//
-//   ldr r0, =property_buffer
-//   ldr r1, [r0, #44]
-//   ldr r0, [r0, #24]
-//
-//   pop {lr}
-//   bx lr
+// -> [w0: uart Hz]
+.global get_uart_clock
+get_uart_clock:
+  ldr w5, =TAG_CLOCK_GET_RATE
+  mov w6, #8
+  mov w7, #CLOCK_UART
+
+  ldr w0, =property_buffer
+  str wzr, [x0, #4]     // request
+  str w5, [x0, #8]
+  str w6, [x0, #12]     // len = 8
+  str wzr, [x0, #16]
+  str w7, [x0, #20]     // uart
+  stp wzr, wzr, [x0, #24]
+  push x0, lr
+  bl mailbox_send
+  pop x0, lr
+  ldr x0, [x0, #24]
+  ret
 
 .global toggle_light
 toggle_light:
@@ -72,19 +56,19 @@ toggle_light:
 // [w0: active_low]
 .global set_led
 set_led:
+  mov w4, w0
   ldr w5, =TAG_SET_GPIO_STATE
   mov w6, #8
   mov w7, #130
 
-  ldr w4, =property_buffer
-  str wzr, [x4, #4]     // request
-  str w5, [x4, #8]
-  str w6, [x4, #12]     // len = 8
-  str wzr, [x4, #16]
-  str w7, [x4, #20]     // pin 130
-  str w0, [x4, #24]     // on/off
-  str wzr, [x4, #28]
-  mov x0, x4
+  ldr w0, =property_buffer
+  str wzr, [x0, #4]     // request
+  str w5, [x0, #8]
+  str w6, [x0, #12]     // len = 8
+  str wzr, [x0, #16]
+  str w7, [x0, #20]     // pin 130
+  str w4, [x0, #24]     // on/off
+  str wzr, [x0, #28]    // end
   // fall thru
 
 // [w0: 32-bit addr]
@@ -121,9 +105,9 @@ mailbox_send:
 // [ #bytes align(16), 0: request, (tag, #bytes req, #bytes resp, args...)* ]
 .align 4
 property_buffer:
-  // 64 bytes(!)
-  .word 64
-  .rept 15
+  // 32 bytes(!)
+  .word 32
+  .rept 7
   .word 0
   .endr
 

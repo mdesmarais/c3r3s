@@ -33,8 +33,19 @@ _start:
 
 next:
   bl toggle_light
+  bl get_uart_clock
+  ldr w1, =115200
+  bl uart_init
+  bl toggle_light
+
+
+
+blink:
+  bl draw_banner
   bl delay_500ms
-  b next
+  bl toggle_light
+
+  b blink
 
 halt:
   wfi

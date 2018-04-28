@@ -7,7 +7,7 @@ OBJCOPY := aarch64-none-elf-objcopy
 AS_FLAGS :=
 # ASFLAGS = -mfloat-abi=hard -mcpu=cortex-a7
 
-SOURCES := $(addprefix src/, boot64.s common.s mailbox.s)
+SOURCES := $(addprefix src/, boot64.s common.s mailbox.s protocol.s uart.s)
 OBJECTS := $(patsubst src/%.s,target/%.o,$(SOURCES))
 
 all: dist/kernel.img dist/fling

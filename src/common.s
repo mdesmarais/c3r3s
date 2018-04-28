@@ -36,13 +36,3 @@ delay_usec:
   cmp w0, w1
   b.ls 1b
   ret
-
-//   push {lr}
-//   ldr r3, =light
-//   ldr r0, [r3]
-//   subs r0, #1
-//   movmi r0, #1
-//   str r0, [r3]
-//   bl set_led
-//   pop {lr}
-//   bx lr
