@@ -48,7 +48,7 @@
 // [w0: uart_clock, w1: bps]
 .global uart_init
 uart_init:
-  push fp, lr
+  mov fp, lr
 
   // the baud divisor is stored as a 16Q6 fixed point, with the integer
   // part in IBRD and the fraction in FBRD. the manual says the divisor is
@@ -90,8 +90,7 @@ uart_init:
   ldr w0, =ENABLE_RX_TX
   str w0, [x3, #CR]
 
-  pop fp, lr
-  ret
+  ret fp
 
 // [w0] -> uart
 // trash: x0 - x2
@@ -108,24 +107,24 @@ uart_write:
 // write 32 bits as 8 hex digits
 // [w3] -> uart
 // trash: x0 - x6
-.global uart_write_hex
-uart_write_hex:
-  mov w4, #32
-  mov w5, #0xf0000000
-  mov x6, lr
-1:
-  sub w4, w4, #4
-  and w0, w3, w5
-  lsr w0, w0, w4
-  add w0, w0, #'0'
-  cmp w0, #'9'
-  bls 2f
-  add w0, w0, #('a' - '9' - 1)
-2:
-  bl uart_write
-  lsr w5, w5, #4
-  cbnz w4, 1b
-  ret x6
+//.global uart_write_hex
+//uart_write_hex:
+//  mov w4, #32
+//  mov w5, #0xf0000000
+//  mov x6, lr
+//1:
+//  sub w4, w4, #4
+//  and w0, w3, w5
+//  lsr w0, w0, w4
+//  add w0, w0, #'0'
+//  cmp w0, #'9'
+//  bls 2f
+//  add w0, w0, #('a' - '9' - 1)
+//2:
+//  bl uart_write
+//  lsr w5, w5, #4
+//  cbnz w4, 1b
+//  ret x6
 
 // write the 4 letters pointed to by x3
 // [x3] -> uart
@@ -147,24 +146,18 @@ uart_write_string:
   b.ne 1b
   ret x5
 
-
-// [r0: data]
-//.global uart_write_u32
-//uart_write_u32:
-//  // r1 = shift
-//  mov r1, #0
-//  ldr r3, =UART_BASE
-//1:
-//  dmb
-//  ldr r2, [r3, #FR]
-//  tst r2, #FR_TX_FULL
-//  bne 1b
-//  mov r2, r0, lsr r1
-//  strb r2, [r3, #DR]
-//  add r1, #8
-//  cmp r1, #32
-//  blo 1b
-//  bx lr
+// [w3] -> uart as LSB u32
+// trash: x0 - x5
+.global uart_write_u32
+uart_write_u32:
+  mov x5, lr
+  ldr w4, #0
+1:
+  lsr w0, w3, w4
+  bl uart_write
+  add w4, w4, #8
+  tbz w4, #5, 1b
+  ret x5
 
 // -> [w0: byte if Z is clear]
 // trash: x0 - x2
@@ -178,24 +171,37 @@ uart_probe:
   tst w1, #FR_RX_EMPTY
   ret
 
-// read LSB 32-bit from uart
+// read LSB u32 from uart
 // -> [w3]
 // trash: x0 - x5
 .global uart_read_u32
 uart_read_u32:
-  mov x5, lr
   // w3 = accumulator, w4 = shift
+  mov x5, lr
+  mov w4, #4
   mov w3, #0
-  mov w4, #0
 1:
   bl uart_probe
   b.ne 1b
-    bl uart_write
-  lsl w0, w0, w4
-  add w3, w3, w0
-  add w4, w4, #8
-  tbz w4, #5, 1b
+  // w3 = (w0 << 24) | (w3 >> 8)
+  extr w3, w0, w3, #8
+  subs w4, w4, #1
+  b.ne 1b
   ret x5
+
+
+//  mov x5, lr
+//  // w3 = accumulator, w4 = shift
+//  mov w3, #0
+//  mov w4, #0
+//1:
+//  bl uart_probe
+//  b.ne 1b
+//  lsl w0, w0, w4
+//  add w3, w3, w0
+//  add w4, w4, #8
+//  tbz w4, #5, 1b
+//  ret x5
 
 // [x6: start_addr, x7: end_addr] (align 4)
 // trash: x0 - x8
@@ -208,17 +214,3 @@ uart_read_block:
   cmp x6, x7
   b.lo 1b
   ret x8
-
-// [r0: start_addr, r1: end_addr] (align 4)
-//.global uart_read_block
-//uart_read_block:
-//  push {r4, r5, lr}
-//  mov r4, r0
-//  mov r5, r1
-//1:
-//  bl uart_read_u32
-//  str r0, [r4], #4
-//  cmp r4, r5
-//  blo 1b
-//  pop {r4, r5, lr}
-//  bx lr

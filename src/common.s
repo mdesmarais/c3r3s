@@ -9,13 +9,14 @@
 
 .set TIMER_LO, 0x3f003004
 
-// arbitrary "100 cycles" (destroys x8)
+// arbitrary "100 cycles" (destroys ip1), then add a memory barrier
 .global delay_small
 delay_small:
-  mov x8, #100
+  mov ip1, #100
 1:
-  subs x8, x8, #1
+  subs ip1, ip1, #1
   bpl 1b
+  dmb sy
   ret
 
 .global delay_500ms

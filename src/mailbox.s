@@ -28,22 +28,18 @@
 // -> [w0: uart Hz]
 .global get_uart_clock
 get_uart_clock:
+  mov fp, lr
   ldr w5, =TAG_CLOCK_GET_RATE
-  mov w6, #8
   mov w7, #CLOCK_UART
 
   ldr w0, =property_buffer
   str wzr, [x0, #4]     // request
   str w5, [x0, #8]
-  str w6, [x0, #12]     // len = 8
-  str wzr, [x0, #16]
   str w7, [x0, #20]     // uart
-  stp wzr, wzr, [x0, #24]
-  push x0, lr
+  mov x5, x0
   bl mailbox_send
-  pop x0, lr
-  ldr x0, [x0, #24]
-  ret
+  ldr x0, [x5, #24]
+  ret fp
 
 .global toggle_light
 toggle_light:
@@ -58,28 +54,23 @@ toggle_light:
 set_led:
   mov w4, w0
   ldr w5, =TAG_SET_GPIO_STATE
-  mov w6, #8
   mov w7, #130
 
   ldr w0, =property_buffer
   str wzr, [x0, #4]     // request
   str w5, [x0, #8]
-  str w6, [x0, #12]     // len = 8
-  str wzr, [x0, #16]
   str w7, [x0, #20]     // pin 130
   str w4, [x0, #24]     // on/off
-  str wzr, [x0, #28]    // end
   // fall thru
 
 // [w0: 32-bit addr]
+// trash: x0 - x3
 .global mailbox_send
 mailbox_send:
   mov x3, lr
-  dmb sy
   ldr w1, =MAILBOX_BASE
 1:
   bl delay_small
-  dmb sy
   ldr w2, [x1, #MAILBOX_STATUS_1]
   tbnz w2, #BIT_FULL, 1b
   add w0, w0, #PROPERTY
@@ -88,7 +79,6 @@ mailbox_send:
   // now wait for the reply:
 2:
   bl delay_small
-  dmb sy
   ldr w2, [x1, #MAILBOX_STATUS_0]
   tbnz w2, #BIT_EMPTY, 2b
   ldr w0, [x1, #MAILBOX_RW_0]
@@ -102,9 +92,15 @@ mailbox_send:
 property_buffer:
   // 32 bytes(!)
   .word 32
-  .rept 7
   .word 0
-  .endr
+  .word 0
+  // our requests are always 8 bytes long:
+  .word 8
+  .word 0
+  // 2 words of args, then end tag:
+  .word 0
+  .word 0
+  .word 0
 
 light:
   .word 0
