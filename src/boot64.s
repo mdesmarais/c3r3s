@@ -48,38 +48,18 @@ wait_for_sync:
 
   bl read_image_header
   b.ne fail
+  bl read_image
+  bl check_crc32
+  b.ne fail
+
   adr x3, good_word
   bl uart_write_word
+  b halt
 
 fail:
   adr x3, fail_word
   bl uart_write_word
 
-  adr x3, foo
-  adr x4, foo_end
-  bl compute_crc32
-  mov w3, w1
-  bl uart_write_hex
-
 halt:
   wfi
   b halt
-
-.set START, 0xffffffff
-compute_crc32:
-  ldr w1, =START
-1:
-  ldrb w0, [x3], #1
-  crc32b w1, w1, w0
-  cmp x3, x4
-  b.lo 1b
-  ldr w2, =START
-  eor w1, w1, w2
-  ret
-
-.data
-
-foo:
-  .ascii "123456789"
-foo_end:
-  .ascii "1234567"
