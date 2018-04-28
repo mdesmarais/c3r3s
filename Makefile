@@ -1,24 +1,25 @@
-ARM64_HOME := /Users/robey/arm64
-
 AS := aarch64-none-elf-as
 CC := aarch64-none-elf-gcc
 OBJCOPY := aarch64-none-elf-objcopy
 
 AS_FLAGS := -mcpu=cortex-a53
-# ASFLAGS = -mfloat-abi=hard -mcpu=cortex-a7
 
 SOURCES := $(addprefix src/, boot64.s common.s mailbox.s protocol.s uart.s)
 OBJECTS := $(patsubst src/%.s,target/%.o,$(SOURCES))
 
-all: dist/kernel.img dist/fling
+all: c3r3s fling
+
+c3r3s: dist/kernel8.img
+
+fling: dist/fling
 
 clean:
 	rm -rf target dist
 	(cd fling && cargo clean)
 
-dist/kernel.img: target/c3r3s.elf
+dist/kernel8.img: target/c3r3s.elf
 	mkdir -p dist
-	$(OBJCOPY) target/c3r3s.elf -O binary dist/kernel.img
+	$(OBJCOPY) target/c3r3s.elf -O binary dist/kernel8.img
 
 target/c3r3s.elf: target $(OBJECTS)
 	$(CC) -n -T src/linker.ld -o target/c3r3s.elf -O2 -nostdlib -Wl,--gc-sections $(OBJECTS)
@@ -38,7 +39,4 @@ dist/fling: fling/Cargo.* fling/src/*
 	mkdir -p dist
 	cp fling/target/release/fling dist/fling
 
-.PHONY: all clean
-
-
-a64:
+.PHONY: all clean c3r3s fling
