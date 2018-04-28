@@ -1,4 +1,4 @@
-.set stack, 0x7fc00
+.set stack, 0x7f800
 .set bootloader, 0x80000
 
 .macro push a, b
@@ -38,15 +38,48 @@ next:
   bl uart_init
   bl toggle_light
 
-
-
-blink:
-  bl draw_banner
+wait_for_sync:
   bl delay_500ms
   bl toggle_light
+  bl draw_banner
+  bl check_sync
+  // tricky way to notice if the state reached 4:
+  tbz w5, #2, wait_for_sync
 
-  b blink
+  bl read_image_header
+  b.ne fail
+  adr x3, good_word
+  bl uart_write_word
+
+fail:
+  adr x3, fail_word
+  bl uart_write_word
+
+  adr x3, foo
+  adr x4, foo_end
+  bl compute_crc32
+  mov w3, w1
+  bl uart_write_hex
 
 halt:
   wfi
   b halt
+
+.set START, 0xffffffff
+compute_crc32:
+  ldr w1, =START
+1:
+  ldrb w0, [x3], #1
+  crc32b w1, w1, w0
+  cmp x3, x4
+  b.lo 1b
+  ldr w2, =START
+  eor w1, w1, w2
+  ret
+
+.data
+
+foo:
+  .ascii "123456789"
+foo_end:
+  .ascii "1234567"

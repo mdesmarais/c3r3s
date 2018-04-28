@@ -4,7 +4,7 @@ AS := aarch64-none-elf-as
 CC := aarch64-none-elf-gcc
 OBJCOPY := aarch64-none-elf-objcopy
 
-AS_FLAGS :=
+AS_FLAGS := -mcpu=cortex-a53
 # ASFLAGS = -mfloat-abi=hard -mcpu=cortex-a7
 
 SOURCES := $(addprefix src/, boot64.s common.s mailbox.s protocol.s uart.s)

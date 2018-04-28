@@ -110,10 +110,11 @@ uart_write:
 // trash: x0 - x6
 .global uart_write_hex
 uart_write_hex:
-  mov w4, #28
+  mov w4, #32
   mov w5, #0xf0000000
   mov x6, lr
 1:
+  sub w4, w4, #4
   and w0, w3, w5
   lsr w0, w0, w4
   add w0, w0, #'0'
@@ -123,7 +124,6 @@ uart_write_hex:
 2:
   bl uart_write
   lsr w5, w5, #4
-  sub w4, w4, #4
   cbnz w4, 1b
   ret x6
 
@@ -148,22 +148,6 @@ uart_write_string:
   ret x5
 
 
-//// [r0: start, r1: end]
-//.global uart_write_string
-//uart_write_string:
-//  ldr r3, =UART_BASE
-//1:
-//  dmb
-//  ldr r2, [r3, #FR]
-//  tst r2, #FR_TX_FULL
-//  bne 1b
-//  ldrb r2, [r0]
-//  str r2, [r3, #DR]
-//  add r0, r0, #1
-//  cmp r0, r1
-//  blo 1b
-//  bx lr
-
 // [r0: data]
 //.global uart_write_u32
 //uart_write_u32:
@@ -182,36 +166,48 @@ uart_write_string:
 //  blo 1b
 //  bx lr
 
-// -> [r0: non-zero if a byte was read]
-//.global uart_probe
-//uart_probe:
-//  mov r0, #0
-//  ldr r3, =UART_BASE
-//  dmb
-//  ldr r2, [r3, #FR]
-//  tst r2, #FR_RX_EMPTY
-//  ldreq r0, [r3, #DR]
-//  and r0, #0xff
-//  bx lr
+// -> [w0: byte if Z is clear]
+// trash: x0 - x2
+.global uart_probe
+uart_probe:
+  dmb sy
+  ldr w2, =UART_BASE
+  ldr w1, [x2, #FR]
+  ldr w0, [x2, #DR]
+  and w0, w0, #0xff
+  tst w1, #FR_RX_EMPTY
+  ret
 
-// -> [r0], blocking, little-endian
-//.global uart_read_u32
-//uart_read_u32:
-//  // r0 = accumulator, r1 = shift
-//  mov r0, #0
-//  mov r1, #0
-//  ldr r3, =UART_BASE
-//1:
-//  dmb
-//  ldr r2, [r3, #FR]
-//  tst r2, #FR_RX_EMPTY
-//  bne 1b
-//  ldrb r2, [r3, #DR]
-//  add r0, r2, lsl r1
-//  add r1, #8
-//  cmp r1, #32
-//  blo 1b
-//  bx lr
+// read LSB 32-bit from uart
+// -> [w3]
+// trash: x0 - x5
+.global uart_read_u32
+uart_read_u32:
+  mov x5, lr
+  // w3 = accumulator, w4 = shift
+  mov w3, #0
+  mov w4, #0
+1:
+  bl uart_probe
+  b.ne 1b
+    bl uart_write
+  lsl w0, w0, w4
+  add w3, w3, w0
+  add w4, w4, #8
+  tbz w4, #5, 1b
+  ret x5
+
+// [x6: start_addr, x7: end_addr] (align 4)
+// trash: x0 - x8
+.global uart_read_block
+uart_read_block:
+  mov x8, lr
+1:
+  bl uart_read_u32
+  str w3, [x6], #4
+  cmp x6, x7
+  b.lo 1b
+  ret x8
 
 // [r0: start_addr, r1: end_addr] (align 4)
 //.global uart_read_block
