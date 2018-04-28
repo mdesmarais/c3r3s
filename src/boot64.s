@@ -56,17 +56,18 @@ read_image_header:
   cmp w3, w4
   bne fail
 
-  // w6: origin, w7: size
+  // w11: origin, w12: size
   bl uart_read_u32
-  mov w6, w3
+  mov w11, w3
   bl uart_read_u32
-  mov w7, w3
+  mov w12, w3
 
 read_blocks:
   // x8: currrent addr, w9: bytes so far, w10: bytes left in current block
-  mov w8, w6
+  mov w8, w11
   mov w9, #0
 read_one_block:
+  bl toggle_light
   bl uart_read_u32
   mov w10, w3
   add w9, w9, w3
@@ -78,15 +79,15 @@ read_one_block:
   // write ack:
   mov w3, w9
   bl uart_write_u32
-  cmp w9, w7
+  cmp w9, w12
   b.lo read_one_block
 
 check_crc32:
   // w3: target crc
   bl uart_read_u32
   // x8: current addr, x9: end addr, w10: crc
-  mov w8, w6
-  add w9, w8, w7
+  mov w8, w11
+  add w9, w8, w12
   mov w10, #0xffffffff
 1:
   ldrb w0, [x8], #1
@@ -106,7 +107,7 @@ check_crc32:
   bl delay_500ms
   pop x2, x3
   pop x0, x1
-  br x6
+  br x11
 
 fail:
   adr x3, fail_word

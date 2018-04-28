@@ -50,16 +50,17 @@ toggle_light:
   // fall thru
 
 // [w0: active_low]
+// trash: x0 - x6
 .global set_led
 set_led:
   mov w4, w0
   ldr w5, =TAG_SET_GPIO_STATE
-  mov w7, #130
+  mov w6, #130
 
   ldr w0, =property_buffer
   str wzr, [x0, #4]     // request
   str w5, [x0, #8]
-  str w7, [x0, #20]     // pin 130
+  str w6, [x0, #20]     // pin 130
   str w4, [x0, #24]     // on/off
   // fall thru
 
