@@ -1,15 +1,21 @@
-.include "src/macros.s"
-//"
+.macro push a, b
+  stp \a, \b, [sp, #-16]!
+.endm
+
+.macro pop a, b
+  ldp \a, \b, [sp], #16
+.endm
 
 .set MAILBOX_BASE, 0x3f00b880
+.set MAILBOX_STATUS_1, 0x38
 .set MAILBOX_RW_0, 0x00
 .set MAILBOX_STATUS_0, 0x18
 .set MAILBOX_RW_1, 0x20
 .set MAILBOX_STATUS_1, 0x38
 
 .set PROPERTY, 8
-.set FULL, (1 << 31)
-.set EMPTY, (1 << 30)
+.set BIT_FULL, 31
+.set BIT_EMPTY, 30
 
 .set TAG_CLOCK_GET_RATE, 0x00030002
 .set TAG_SET_GPIO_STATE, 0x00038041
@@ -19,97 +25,65 @@
 
 .text
 
-// -> [r0: core, r1: uart]
-.global clocks_get_info
-clocks_get_info:
-  push {lr}
+// -> [w0: uart Hz]
+.global get_uart_clock
+get_uart_clock:
+  mov fp, lr
+  ldr w5, =TAG_CLOCK_GET_RATE
+  mov w7, #CLOCK_UART
 
-  ldr r0, =property_buffer
-  mov r1, #0
-  ldr r2, =TAG_CLOCK_GET_RATE
-  mov r3, #8
-
-  str r1, [r0, #4]
-
-  str r2, [r0, #8]
-  str r3, [r0, #12]
-  str r1, [r0, #16]
-  ldr r12, =CLOCK_CORE
-  str r12, [r0, #20]
-  str r1, [r0, #24]
-
-  str r2, [r0, #28]
-  str r3, [r0, #32]
-  str r1, [r0, #36]
-  ldr r12, =CLOCK_UART
-  str r12, [r0, #40]
-  str r1, [r0, #44]
-
-  str r1, [r0, #48]
+  ldr w0, =property_buffer
+  str wzr, [x0, #4]     // request
+  str w5, [x0, #8]
+  str w7, [x0, #20]     // uart
+  mov x5, x0
   bl mailbox_send
+  ldr x0, [x5, #24]
+  ret fp
 
-  ldr r0, =property_buffer
-  ldr r1, [r0, #44]
-  ldr r0, [r0, #24]
+.global toggle_light
+toggle_light:
+  adr x1, light
+  ldr w0, [x1]
+  eor w0, w0, #1
+  str w0, [x1]
+  // fall thru
 
-  pop {lr}
-  bx lr
-
-// [r0: active_low]
+// [w0: active_low]
+// trash: x0 - x6
 .global set_led
 set_led:
-  push {r4, lr}
-  mov r4, r0
+  mov w4, w0
+  ldr w5, =TAG_SET_GPIO_STATE
+  mov w6, #130
 
-  ldr r0, =property_buffer
-  mov r1, #0
-  ldr r2, =TAG_SET_GPIO_STATE
-  mov r3, #8
+  ldr w0, =property_buffer
+  str wzr, [x0, #4]     // request
+  str w5, [x0, #8]
+  str w6, [x0, #20]     // pin 130
+  str w4, [x0, #24]     // on/off
+  // fall thru
 
-  str r1, [r0, #4]
-
-  str r2, [r0, #8]
-  str r3, [r0, #12]
-  str r1, [r0, #16]
-  mov r12, #130
-  str r12, [r0, #20]
-  str r4, [r0, #24]
-
-  str r1, [r0, #28]
-  bl mailbox_send
-
-  pop {r4, lr}
-  bx lr
-
-// [r0: addr]
+// [w0: 32-bit addr]
+// trash: x0 - x3
 .global mailbox_send
 mailbox_send:
-  push {r4, r5, r6, lr}
-  mov r4, r0
-  ldr r5, =MAILBOX_BASE
-  dmb
+  mov x3, lr
+  ldr w1, =MAILBOX_BASE
 1:
-  ldr r6, [r5, #MAILBOX_STATUS_1]
-  ands r6, r6, #FULL
-  beq 2f
-  delay 100
-  b 1b
-2:
-  add r4, r4, #PROPERTY
-  str r4, [r5, #MAILBOX_RW_1]
+  bl delay_small
+  ldr w2, [x1, #MAILBOX_STATUS_1]
+  tbnz w2, #BIT_FULL, 1b
+  add w0, w0, #PROPERTY
+  str w0, [x1, #MAILBOX_RW_1]
 
   // now wait for the reply:
-  dmb
-3:
-  ldr r6, [r5, #MAILBOX_STATUS_0]
-  ands r6, r6, #EMPTY
-  beq 4f
-  delay 100
-  b 3b
-4:
-  ldr r0, [r5, #MAILBOX_RW_0]
-  pop {r4, r5, r6, lr}
-  mov pc, lr
+2:
+  bl delay_small
+  ldr w2, [x1, #MAILBOX_STATUS_0]
+  tbnz w2, #BIT_EMPTY, 2b
+  ldr w0, [x1, #MAILBOX_RW_0]
+  ret x3
 
 
 .data
@@ -117,8 +91,17 @@ mailbox_send:
 // [ #bytes align(16), 0: request, (tag, #bytes req, #bytes resp, args...)* ]
 .align 4
 property_buffer:
-  // 64 bytes(!)
-  .word 64
-  .rept 15
+  // 32 bytes(!)
+  .word 32
   .word 0
-  .endr
+  .word 0
+  // our requests are always 8 bytes long:
+  .word 8
+  .word 0
+  // 2 words of args, then end tag:
+  .word 0
+  .word 0
+  .word 0
+
+light:
+  .word 0
