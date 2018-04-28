@@ -47,9 +47,9 @@ impl ProgressBar {
     let blocks = (((count as f64) * 50.0 / (self.total as f64)) + 0.5) as usize;
     print!("\r  [{}", YELLOW);
     for _i in 0..blocks { print!("#") }
-    print!("{}", PURPLE);
+    print!("{}", RESET);
     for _i in 0..(50 - blocks) { print!("-") }
-    print!("{} {}B ", RESET, human_size(count as u64));
+    print!("{}] {}B ", RESET, human_size(count as u64));
     io::stdout().flush()
   }
 
