@@ -187,29 +187,3 @@ uart_read_u32:
   subs w4, w4, #1
   b.ne 1b
   ret x5
-
-
-//  mov x5, lr
-//  // w3 = accumulator, w4 = shift
-//  mov w3, #0
-//  mov w4, #0
-//1:
-//  bl uart_probe
-//  b.ne 1b
-//  lsl w0, w0, w4
-//  add w3, w3, w0
-//  add w4, w4, #8
-//  tbz w4, #5, 1b
-//  ret x5
-
-// [x6: start_addr, x7: end_addr] (align 4)
-// trash: x0 - x8
-.global uart_read_block
-uart_read_block:
-  mov x8, lr
-1:
-  bl uart_read_u32
-  str w3, [x6], #4
-  cmp x6, x7
-  b.lo 1b
-  ret x8
