@@ -11,22 +11,22 @@
 
 .section ".text.boot"
 
-.global _start
-_start:
+.global start
+start:
   mov sp, #stack
   // in theory, the previous stage bootloader stored interesting facts in x0-x2.
   push x0, x1
   push x2, x3
   // move code to $7fc00, then jump-absolute to it.
-  ldr x0, =_start
+  ldr x0, =start
   mov x1, #bootloader
-  ldr x2, =_end
+  ldr x2, =end
 1:
   ldp x8, x9, [x1], #16
   stp x8, x9, [x0], #16
   cmp x0, x2
   b.lo 1b
-  adr x0, next
+  ldr x0, =next
   br x0
 
 .text
