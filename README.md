@@ -10,7 +10,7 @@ It's inspired by [raspbootin](https://github.com/mrvn/raspbootin), with these di
   - can load and execute into any address
   - does a CRC-32 check at the end
 
-<img src="screenshot.png" width="400">
+<img src="screenshot.png">
 
 ## How to build
 
@@ -32,7 +32,7 @@ make fling
 
 ## How to use
 
-Make sure you have an SD card with the basic raspberry pi 3 bootloader (https://github.com/raspberrypi/firmware).
+Build an SD card with the basic raspberry pi 3 bootloader (https://github.com/raspberrypi/firmware).
 
 Your `config.txt` file needs to have these lines in order to turn on the LED and the serial port:
 
@@ -75,17 +75,15 @@ The protocol is meant to be dumb and leave all configuration to the host (fling)
 c3r3s is now ready to receive a kernel. The kernel must be a multiple of 4 bytes (32-bit word) long.
 
 4. host: `send` followed by:
-    - starting address (u32 LE)
-    - size (u32 LE)
+     - starting address (u32 LE)
+     - size (u32 LE)
 
-The host now sends blocks. Each block is:
-    - length (u32 LE)
-    - data (the number of bytes in length)
+5. The host now sends blocks. Each block is:
+     - host: length (u32 LE)
+     - host: data (the number of bytes in length)
+     - c3r3s: length of total data received so far (u32 LE)
 
-After each block, c3r3s writes an ack back:
-    - length of total data received so far (u32 LE)
-
-When the entire kernel is sent, the host sends a final checksum:
+6. When the entire kernel is sent, the host sends a final checksum:
     - CRC-32 (u32 LE)
 
 c3r3s will respond with `fail` if the CRC didn't match, or `good` if it succeeded.
