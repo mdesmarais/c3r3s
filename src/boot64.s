@@ -90,8 +90,8 @@ check_crc32:
   add w9, w8, w12
   mov w10, #0xffffffff
 1:
-  ldrb w0, [x8], #1
-  crc32b w10, w10, w0
+  ldr w0, [x8], #4
+  crc32w w10, w10, w0
   cmp x8, x9
   b.lo 1b
   mvn w10, w10
