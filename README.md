@@ -10,6 +10,8 @@ It's inspired by [raspbootin](https://github.com/mrvn/raspbootin), with these di
   - can load and execute into any address
   - does a CRC-32 check at the end
 
+<img src="screenshot.png" width="400">
+
 ## How to build
 
 Building the bootloader requires an ARM64 cross-compiler toolchain. These are incredibly fussy to build -- I used the homebrew tap kindly made available by Sergio Benitez [here](https://github.com/SergioBenitez/homebrew-osxct).
