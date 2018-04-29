@@ -5,6 +5,7 @@ use std::time::{Duration, Instant};
 
 pub const RESET: &str = "\x1b[0m";
 pub const GREEN: &str = "\x1b[32m";
+#[allow(dead_code)]
 pub const PURPLE: &str = "\x1b[35m";
 pub const BRIGHT_RED: &str = "\x1b[1;31m";
 pub const YELLOW: &str = "\x1b[1;33m";
