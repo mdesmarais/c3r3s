@@ -16,7 +16,7 @@ mod serial;
 
 use serial::Serial;
 
-const DEFAULT_ORIGIN: u32 = 0x8000;
+const DEFAULT_ORIGIN: u32 = 0x80000;
 const DEFAULT_BLOCK_SIZE: u32 = 1024;
 
 fn main() {
