@@ -13,8 +13,9 @@
 draw_banner:
   mov x6, lr
   adr x3, banner
-  adr x4, banner_end
-  bl uart_write_string
+  bl uart_write_word
+  adr x3, banner2
+  bl uart_write_word
   adr x0, spinner
   adr x1, spinner_index
   ldrb w2, [x1]
@@ -49,9 +50,9 @@ check_sync:
 .data
 
 banner:
-  .ascii "\rc3r3s "
-banner_end:
-  .byte 0
+  .ascii "\r*c3"
+banner2:
+  .ascii "r3s "
 
 spinner:
   .ascii "/-\\|"

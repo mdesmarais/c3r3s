@@ -102,47 +102,11 @@ uart_write:
   strb w0, [x2, #DR]
   ret
 
-// write 32 bits as 8 hex digits
-// [w3] -> uart
-// trash: x0 - x6
-//.global uart_write_hex
-//uart_write_hex:
-//  mov w4, #32
-//  mov w5, #0xf0000000
-//  mov x6, lr
-//1:
-//  sub w4, w4, #4
-//  and w0, w3, w5
-//  lsr w0, w0, w4
-//  add w0, w0, #'0'
-//  cmp w0, #'9'
-//  bls 2f
-//  add w0, w0, #('a' - '9' - 1)
-//2:
-//  bl uart_write
-//  lsr w5, w5, #4
-//  cbnz w4, 1b
-//  ret x6
-
-// write the 4 letters pointed to by x3
-// [x3] -> uart
+// [*w3] -> uart as LSB u32
 // trash: x0 - x5
 .global uart_write_word
 uart_write_word:
-  add x4, x3, #4
-  // fall thru
-
-// [x3: start, x4: end] -> uart
-// trash: x0 - x5
-.global uart_write_string
-uart_write_string:
-  mov x5, lr
-1:
-  ldrb w0, [x3], #1
-  bl uart_write
-  cmp x3, x4
-  b.ne 1b
-  ret x5
+  ldr w3, [x3]
 
 // [w3] -> uart as LSB u32
 // trash: x0 - x5
