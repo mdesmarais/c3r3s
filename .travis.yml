@@ -1,3 +1,5 @@
 os: osx
 install: brew bundle
-script: make c3r3s
+script: make
+
+language: rust
