@@ -1,6 +1,8 @@
 
 # c3r3s
 
+[![Build Status](https://travis-ci.org/robey/c3r3s.svg?branch=master)](https://travis-ci.org/robey/c3r3s)
+
 c3r3s is a tiny (1KB binary) serial bootloader for loading "bare metal" 64-bit kernels on the Raspberry Pi 3. You can iterate on your own kernel code without constantly moving the SD card back and forth.
 
 It's inspired by [raspbootin](https://github.com/mrvn/raspbootin), with these differences:
