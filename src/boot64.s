@@ -18,15 +18,15 @@ start:
   push x0, x1
   push x2, x3
   // move code to $7fc00, then jump-absolute to it.
-  ldr x0, =start
-  mov x1, #bootloader
-  ldr x2, =end
+  ldr w0, =start
+  mov w1, #bootloader
+  ldr w2, =end
 1:
   ldp x8, x9, [x1], #16
   stp x8, x9, [x0], #16
   cmp x0, x2
   b.lo 1b
-  ldr x0, =next
+  ldr w0, =next
   br x0
 
 .text

@@ -1,5 +1,5 @@
 AS := aarch64-none-elf-as
-CC := aarch64-none-elf-gcc
+LD := aarch64-none-elf-ld
 OBJCOPY := aarch64-none-elf-objcopy
 
 AS_FLAGS := -mcpu=cortex-a53
@@ -22,7 +22,7 @@ dist/kernel8.img: target/c3r3s.elf
 	$(OBJCOPY) target/c3r3s.elf -O binary dist/kernel8.img
 
 target/c3r3s.elf: target $(OBJECTS)
-	$(CC) -n -T src/linker.ld -o target/c3r3s.elf -O2 -nostdlib -Wl,--gc-sections $(OBJECTS)
+	$(LD) -T src/linker.ld -o target/c3r3s.elf --gc-sections $(OBJECTS)
 	size -A -x target/c3r3s.elf
 
 target/%.o: src/%.s
