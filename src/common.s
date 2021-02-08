@@ -9,10 +9,11 @@
 
 .set TIMER_LO, 0x3f003004
 
-// arbitrary "100 cycles" (destroys ip1), then add a memory barrier
+// wait a number of cycles (destroys ip1), then add a memory barrier
+// [w0: number of cycles]
 .global delay_small
 delay_small:
-  mov ip1, #100
+  mov w17, w0
 1:
   subs ip1, ip1, #1
   bpl 1b

@@ -64,10 +64,12 @@ uart_init:
   ldr w2, =GPIO_BASE
   mov w0, #MODE_OFF
   str w0, [x2, #GPPUD]
+  mov w0, #100
   bl delay_small
   mov w0, #((1 << TXD0) | (1 << RXD0))
   str w0, [x2, #GPPUDCLK0]
   str wzr, [x2, #GPPUDCLK1]
+  mov w0, #100
   bl delay_small
   str wzr, [x2, #GPPUDCLK0]
   str wzr, [x2, #GPPUDCLK1]
@@ -89,6 +91,23 @@ uart_init:
   str w0, [x3, #CR]
 
   ret fp
+
+.global uart_stop
+uart_stop:
+  ldr w3, =UART_BASE
+  str wzr, [x3, #CR]
+
+1:
+  ldr w0, [x3, #FR]
+  tst w0, #(1 << 3)
+  b.ne 1b
+
+  // LCRH p184
+  str wzr, [x3, #LCRH]
+
+  ldr w0, =MASK_ALL
+  str w0, [x3, #ICR]
+  ret
 
 // [w0] -> uart
 // trash: x0 - x2

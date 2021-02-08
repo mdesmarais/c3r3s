@@ -71,7 +71,10 @@ mailbox_send:
   mov x3, lr
   ldr w1, =MAILBOX_BASE
 1:
+  mov w2, w0
+  mov w0, #100
   bl delay_small
+  mov w0, w2
   ldr w2, [x1, #MAILBOX_STATUS_1]
   tbnz w2, #BIT_FULL, 1b
   add w0, w0, #PROPERTY
@@ -79,6 +82,7 @@ mailbox_send:
 
   // now wait for the reply:
 2:
+  mov w0, #100
   bl delay_small
   ldr w2, [x1, #MAILBOX_STATUS_0]
   tbnz w2, #BIT_EMPTY, 2b

@@ -1,13 +1,16 @@
-AS := aarch64-none-elf-as
-LD := aarch64-none-elf-ld
-OBJCOPY := aarch64-none-elf-objcopy
+AS := aarch64-linux-gnu-as
+LD := aarch64-linux-gnu-ld
+OBJCOPY := aarch64-linux-gnu-objcopy
 
 AS_FLAGS := -mcpu=cortex-a53
 
-SOURCES := $(addprefix src/, boot64.s common.s mailbox.s protocol.s uart.s)
+# Available files : mini_uart.s and uart.s
+UART := mini_uart.s
+
+SOURCES := $(addprefix src/, boot64.s common.s mailbox.s protocol.s $(UART))
 OBJECTS := $(patsubst src/%.s,target/%.o,$(SOURCES))
 
-all: c3r3s fling
+all: c3r3s
 
 c3r3s: dist/kernel8.img
 
@@ -31,6 +34,14 @@ target/%.o: src/%.s
 target:
 	mkdir -p target
 
+run: c3r3s
+	qemu-system-aarch64 -M raspi3 -kernel dist/kernel8.img -serial stdio
+
+debug: c3r3s
+	qemu-system-aarch64 -s -S -M raspi3 -kernel dist/kernel8.img -serial null -serial stdio
+
+dump: target/c3r3s.elf
+	aarch64-linux-gnu-objdump -D $< > dump
 
 # fling
 
@@ -39,4 +50,4 @@ dist/fling: fling/Cargo.* fling/src/*
 	mkdir -p dist
 	cp fling/target/release/fling dist/fling
 
-.PHONY: all clean c3r3s fling
+.PHONY: all clean c3r3s fling debug run dump

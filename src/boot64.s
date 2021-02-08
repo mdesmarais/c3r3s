@@ -105,6 +105,7 @@ check_crc32:
   bl delay_500ms
   bl toggle_light
   bl delay_500ms
+  bl uart_stop
   pop x2, x3
   pop x0, x1
   br x11
