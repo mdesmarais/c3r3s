@@ -20,6 +20,15 @@ Building the bootloader requires an ARM64 cross-compiler toolchain. These are in
 
 You may have to edit the Makefile to indicate where the tools live.
 
+By default, c3r3s works with the mini_uart of the raspberry. If you want to use the normal uart (PL011), you need to change the following line (from the Makefile)  
+```
+UART := mini_uart.s
+```
+into 
+```
+UART := uart.s
+```
+
 ```sh
 make c3r3s
 ```
@@ -32,6 +41,12 @@ The command-line tool for uploading a kernel is a rust program called "fling". [
 make fling
 ```
 
+An alternative client written in python is also avalaible :
+
+```
+python3 flash.py dist/kernel8.img
+```
+
 ## How to use
 
 Build an SD card with the basic raspberry pi 3 bootloader (https://github.com/raspberrypi/firmware).
@@ -40,7 +55,6 @@ Your `config.txt` file needs to have these lines in order to turn on the LED and
 
 ```
 enable_uart=1
-dtoverlay=pi3-miniuart-bt
 dtoverlay=pi3-act-led
 ```
 
